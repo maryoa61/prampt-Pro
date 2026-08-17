@@ -1,22 +1,42 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# 🚀 Prompt-Pro
 
-# Run and deploy your AI Studio app
+An advanced Android application built with **Kotlin**, **Jetpack Compose**, and **Clean Architecture**, integrated with **Google Gemini API** for intelligent prompt generation, history management, and direct AI chat functionality.
 
-This contains everything you need to run your app locally.
+---
 
-View your app in AI Studio: https://ai.studio/apps/013bf913-8cd5-40e4-8e0a-35d5afd3e44a
+## ✨ Features
 
-## Run Locally
+- **AI-Powered Prompt Generation:** Create structured, optimized prompts using Gemini API.
+- **Interactive AI Chat Mode:** Direct real-time chat with Gemini to experiment and refine your workflow.
+- **History Management:** Locally saved prompt history powered by **Room Database** and **DataStore**.
+- **Modern UI / Material 3:** Built entirely with Jetpack Compose supporting Dark/Light themes.
+- **Clean Architecture:** Strict separation of concerns across `domain`, `data`, and `ui` layers.
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+---
 
+## 🛠️ Tech Stack
 
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
-7. If you have already published your app in AI Studio, please [request upload key reset](https://support.google.com/googleplay/android-developer/answer/9842756#zippy=%2Crequest-an-upload-key-reset) in Google Play Console.
+- **Language:** Kotlin
+- **UI Toolkit:** Jetpack Compose & Material 3
+- **Architecture:** Clean Architecture (MVVM + UseCases)
+- **Local Database:** Room & DataStore
+- **Networking:** Retrofit & OkHttp (Gemini API)
+- **Dependency Injection:** Manual / AppContainer
+
+---
+
+## 📱 Getting Started
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/maryoa61/prampt-Pro.git
+   ```
+2. Open the project in **Android Studio (Narwhal / Jellyfish or newer)**.
+3. Add your Gemini API key in your local properties or environment.
+4. Build and run on your Android device (supports Android 14+ / API 34+).
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.

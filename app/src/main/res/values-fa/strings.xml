@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">تولیدکننده پرامپت</string>
+    <string name="nav_generator">تولید پرامپت</string>
+    <string name="nav_history">تاریخچه</string>
+    <string name="nav_settings">تنظیمات</string>
+    <string name="title_generator">ساخت پرامپت هوشمند با هوش مصنوعی</string>
+    <string name="subtitle_generator">ورودی با هر زبان (فارسی، انگلیسی و ...) به پرامپت ساختاریافته انگلیسی</string>
+    <string name="input_label">متن یا ایده اولیه شما (هر زبانی)</string>
+    <string name="input_placeholder">ایده یا متن خود را به فارسی، انگلیسی یا ترکیب بنویسید (مثلاً: یک ایده برای اپلیکیشن فروشگاهی...)</string>
+    <string name="style_label">حوزه / سبک پرامپت</string>
+    <string name="custom_role_label">نقش سفارشی مدل (اختیاری)</string>
+    <string name="custom_role_placeholder">مثلاً: Senior Android Architect</string>
+    <string name="custom_constraints_label">محدودیت‌ها و شرایط خاص (اختیاری)</string>
+    <string name="custom_constraints_placeholder">مثلاً: فقط با Jetpack Compose و کاتلین</string>
+    <string name="btn_generate">ساخت پرامپت حرفه‌ای</string>
+    <string name="btn_generating">در حال تولید پرامپت با Gemini...</string>
+    <string name="generated_prompt_title">پرامپت انگلیسی ساختاریافته</string>
+    <string name="btn_copy">کپی</string>
+    <string name="btn_copied">کپی شد!</string>
+    <string name="btn_share">اشتراک‌گذاری</string>
+    <string name="btn_save">ذخیره</string>
+    <string name="btn_saved">ذخیره شد</string>
+    <string name="btn_clear">پاک کردن</string>
+    <string name="history_title">تاریخچه پرامپت‌های ذخیره‌شده</string>
+    <string name="history_search_placeholder">جستجو در پرامپت‌ها...</string>
+    <string name="history_empty">هنوز پرامپتی ذخیره نشده است. با ساخت پرامپت جدید، آنها در اینجا ذخیره می‌شوند.</string>
+    <string name="btn_delete">حذف</string>
+    <string name="delete_confirm_title">حذف پرامپت</string>
+    <string name="delete_confirm_msg">آیا از حذف این پرامپت مطمئن هستید؟</string>
+    <string name="settings_title">تنظیمات و اطلاعات</string>
+    <string name="api_config_title">وضعیت اتصال Gemini API</string>
+    <string name="api_key_configured">کلید API متصل است</string>
+    <string name="api_key_missing">کلید API در محیط یافت نشد.</string>
+    <string name="model_info">مدل فعال هوش مصنوعی</string>
+    <string name="prompt_structure_info">استاندارد ۵ بخشی: ROLE / CONTEXT / TASK / CONSTRAINTS / OUTPUT FORMAT</string>
+    <string name="persian_support_info">پشتیبانی کامل از زبان فارسی و تبدیل مستقیم به پرامپت تخصصی انگلیسی</string>
+    <string name="export_data_btn">خروجی گرفتن تاریخچه (JSON)</string>
+    <string name="clear_history_btn">پاکسازی کامل تاریخچه</string>
+    <string name="history_cleared_msg">تمام تاریخچه با موفقیت پاک شد</string>
+    <string name="error_empty_input">لطفاً متنی برای ساخت پرامپت وارد کنید.</string>
+    <string name="error_api_general">خطا در تولید پرامپت. اتصال اینترنت و کلید API را بررسی کنید.</string>
+    <string name="security_warning_title">هشدار امنیتی</string>
+    <string name="security_warning_content">I have included your API keys in the generated APK file for this prototype. Please be aware that Android APKs can be easily decompiled, and these keys can be extracted by anyone who has access to the file. Do not share this APK file publicly or with unauthorized individuals to prevent potential misuse.</string>
+</resources>

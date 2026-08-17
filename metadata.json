@@ -1,0 +1,7 @@
+{
+  "name": "Prompt Generator",
+  "description": "Multi-lingual AI Prompt Generator powered by Gemini API, transforming Persian, English, and any language into production-ready structured English prompts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

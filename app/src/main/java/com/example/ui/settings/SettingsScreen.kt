@@ -1,13 +1,13 @@
 package com.example.ui.settings
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,21 +18,25 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Translate
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,8 +44,11 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -49,6 +56,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -58,33 +66,33 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.BuildConfig
 import com.example.R
-import kotlin.math.roundToInt
+import com.example.domain.model.ApiKeySlot
+import com.example.domain.model.ApiProvider
 
-private val availableModels = listOf(
-    "gemini-2.5-flash",
-    "gemini-3.5-flash",
-    "gemini-3.1-pro-preview"
-)
-
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     modifier: Modifier = Modifier
 ) {
-    val selectedModel by viewModel.selectedModel.collectAsStateWithLifecycle()
+    val apiSlots by viewModel.apiSlots.collectAsStateWithLifecycle()
+    val autoFallback by viewModel.autoFallback.collectAsStateWithLifecycle()
     val temperature by viewModel.temperature.collectAsStateWithLifecycle()
-    val autoSave by viewModel.autoSave.collectAsStateWithLifecycle()
-    val isDarkTheme by viewModel.isDarkTheme.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var showClearDialog by remember { mutableStateOf(false) }
+    val passwordVisibilityMap = remember { mutableStateMapOf<Int, Boolean>() }
+    val expandedSlotsMap = remember { mutableStateMapOf<Int, Boolean>(0 to true) }
 
-    val hasApiKey = remember {
+    val hasSystemGeminiKey = remember {
         BuildConfig.GEMINI_API_KEY.isNotBlank() && BuildConfig.GEMINI_API_KEY != "MY_GEMINI_API_KEY"
     }
 
@@ -95,40 +103,59 @@ fun SettingsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Section: Gemini API Configuration Status
+        // Multi-API Auto-Fallback Control Card
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag("api_status_card"),
+                .testTag("auto_fallback_card"),
             shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.7f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
             Column(
                 modifier = Modifier.padding(18.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Key,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Text(
-                        text = stringResource(R.string.api_config_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.SwapHoriz,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Column {
+                            Text(
+                                text = "Auto Credit Fallback (جابجایی هوشمند)",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "در صورت اتمام شارژ/محدودیت بات اصلی، خودکار به کلیدهای پشتیبان سوئیچ می‌شود",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Switch(
+                        checked = autoFallback,
+                        onCheckedChange = { viewModel.setAutoFallback(it) },
+                        modifier = Modifier.testTag("switch_auto_fallback")
                     )
                 }
 
                 Surface(
-                    color = if (hasApiKey) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
                     shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, (if (hasApiKey) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary).copy(alpha = 0.3f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -137,37 +164,280 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.CheckCircle,
+                            imageVector = Icons.Filled.AutoAwesome,
                             contentDescription = null,
-                            tint = if (hasApiKey) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onTertiaryContainer
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = if (hasApiKey) stringResource(R.string.api_key_configured) else stringResource(R.string.api_key_missing),
+                            text = "شما می‌توانید همزمان ۴ کلید هوش مصنوعی مختلف (۱ بات اصلی + ۳ پشتیبان) بارگذاری نمایید.",
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Medium,
-                            color = if (hasApiKey) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onTertiaryContainer
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }
-
-                Text(
-                    text = "API Key is securely managed via BuildConfig and AI Studio Secrets panel (.env).",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
 
-        // Section: Gemini Model Selection
+        // Section: 4 API Slots (Slot 0 = Primary, Slots 1-3 = Backup)
+        Text(
+            text = "API Engines & Keys (تنظیم ۴ موتور و کلید)",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        apiSlots.forEach { slot ->
+            val isExpanded = expandedSlotsMap[slot.slotIndex] ?: (slot.slotIndex == 0)
+            val isPassVisible = passwordVisibilityMap[slot.slotIndex] ?: false
+
+            val slotHasKey = if (slot.provider == ApiProvider.GEMINI) {
+                slot.hasKey || hasSystemGeminiKey
+            } else {
+                slot.hasKey
+            }
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("slot_card_${slot.slotIndex}"),
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(
+                    width = if (slot.isPrimary) 2.dp else 1.dp,
+                    color = if (slot.isPrimary) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.outlineVariant
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Header of Slot
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Surface(
+                                color = if (slot.isPrimary) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = if (slot.isPrimary) "PRIMARY (بات اصلی)" else "BACKUP ${slot.slotIndex} (ذخیره)",
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (slot.isPrimary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+
+                            if (slotHasKey) {
+                                Icon(
+                                    imageVector = Icons.Filled.CheckCircle,
+                                    contentDescription = "Active",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Switch(
+                                checked = slot.isEnabled,
+                                onCheckedChange = { isChecked ->
+                                    viewModel.updateSlot(slotIndex = slot.slotIndex, isEnabled = isChecked)
+                                },
+                                modifier = Modifier.testTag("switch_slot_${slot.slotIndex}")
+                            )
+                            IconButton(
+                                onClick = {
+                                    expandedSlotsMap[slot.slotIndex] = !isExpanded
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = if (isExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                    contentDescription = if (isExpanded) "Collapse" else "Expand"
+                                )
+                            }
+                        }
+                    }
+
+                    // Compact Preview when collapsed
+                    if (!isExpanded) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "${slot.provider.displayName} • ${slot.model}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = if (slotHasKey) "Key Set" else "No Key",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (slotHasKey) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+
+                    // Expanded Details
+                    AnimatedVisibility(visible = isExpanded) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.padding(top = 6.dp)
+                        ) {
+                            // Select Provider
+                            Text(
+                                text = "Select Provider:",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                ApiProvider.entries.forEach { provider ->
+                                    val isSelected = slot.provider == provider
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = {
+                                            viewModel.updateSlot(slotIndex = slot.slotIndex, provider = provider)
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        label = {
+                                            Text(
+                                                text = provider.displayName,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                            )
+                                        },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        ),
+                                        modifier = Modifier.testTag("slot_${slot.slotIndex}_provider_${provider.id}")
+                                    )
+                                }
+                            }
+
+                            // API Key Field
+                            OutlinedTextField(
+                                value = slot.apiKey,
+                                onValueChange = { newKey ->
+                                    viewModel.updateSlot(slotIndex = slot.slotIndex, apiKey = newKey)
+                                },
+                                label = { Text("API Key (${slot.provider.displayName})") },
+                                placeholder = {
+                                    Text(
+                                        when (slot.provider) {
+                                            ApiProvider.GEMINI -> "AIzaSy... (یا از کلید پیش‌فرض استفاده می‌شود)"
+                                            ApiProvider.OPENAI -> "sk-proj-..."
+                                            ApiProvider.CLAUDE -> "sk-ant-..."
+                                            ApiProvider.DEEPSEEK -> "sk-..."
+                                            ApiProvider.NVIDIA -> "nvapi-..."
+                                            ApiProvider.GROQ -> "gsk_..."
+                                            ApiProvider.CUSTOM_OPENAI_COMPATIBLE -> "Enter API Key"
+                                        }
+                                    )
+                                },
+                                visualTransformation = if (isPassVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                trailingIcon = {
+                                    IconButton(onClick = { passwordVisibilityMap[slot.slotIndex] = !isPassVisible }) {
+                                        Icon(
+                                            imageVector = if (isPassVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                            contentDescription = null
+                                        )
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("slot_${slot.slotIndex}_api_key_input"),
+                                shape = RoundedCornerShape(12.dp),
+                                singleLine = true
+                            )
+
+                            // Model Selection for Slot
+                            Text(
+                                text = "Model Selection:",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                slot.provider.availableModels.forEach { modelName ->
+                                    val isSelected = slot.model == modelName
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = {
+                                            viewModel.updateSlot(slotIndex = slot.slotIndex, model = modelName)
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        label = {
+                                            Text(modelName, style = MaterialTheme.typography.labelSmall)
+                                        },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                    )
+                                }
+                            }
+
+                            // Model textfield override
+                            OutlinedTextField(
+                                value = slot.model,
+                                onValueChange = { newModel ->
+                                    viewModel.updateSlot(slotIndex = slot.slotIndex, model = newModel)
+                                },
+                                label = { Text("Model Name") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                singleLine = true
+                            )
+
+                            // Optional Custom Endpoint for Proxy/DeepSeek/Groq
+                            if (slot.provider == ApiProvider.CUSTOM_OPENAI_COMPATIBLE || slot.provider == ApiProvider.DEEPSEEK || slot.provider == ApiProvider.NVIDIA || slot.provider == ApiProvider.GROQ) {
+                                OutlinedTextField(
+                                    value = slot.customEndpoint.ifBlank { slot.provider.defaultEndpoint },
+                                    onValueChange = { newEp ->
+                                        viewModel.updateSlot(slotIndex = slot.slotIndex, endpoint = newEp)
+                                    },
+                                    label = { Text("Endpoint URL (Optional)") },
+                                    placeholder = { Text(slot.provider.defaultEndpoint) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    singleLine = true
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Section: Generation Parameters (Temperature)
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.7f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
             Column(
                 modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -180,7 +450,7 @@ fun SettingsScreen(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = stringResource(R.string.model_info),
+                        text = "Model Temperature (میزان خلاقیت)",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -188,79 +458,48 @@ fun SettingsScreen(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    availableModels.forEach { modelName ->
-                        val isSelected = selectedModel == modelName
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { viewModel.updateModel(modelName) },
-                            shape = RoundedCornerShape(12.dp),
-                            label = { Text(modelName, style = MaterialTheme.typography.labelSmall, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
-                            border = BorderStroke(
-                                width = 1.dp,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.7f)
-                            ),
-                            modifier = Modifier.testTag("chip_model_$modelName")
-                        )
-                    }
+                    Text(
+                        text = "Creativity level:",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "%.2f".format(temperature),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                Slider(
+                    value = temperature,
+                    onValueChange = { viewModel.updateTemperature(it) },
+                    valueRange = 0.0f..1.0f,
+                    steps = 9,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("slider_temperature")
+                )
 
-                // Temperature Slider
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Creativity (Temperature):",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = "%.2f".format(temperature),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    Slider(
-                        value = temperature,
-                        onValueChange = { viewModel.updateTemperature(it) },
-                        valueRange = 0.0f..1.0f,
-                        steps = 9,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("slider_temperature")
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("0.0 (Precise)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("0.5 (Balanced)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("1.0 (Creative)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("0.0 (Precise)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("0.5 (Balanced)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("1.0 (Creative)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
 
-        // Section: Prompt Architecture Features Info
+        // Section: Universal Prompt Engine Info
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
             Column(
                 modifier = Modifier.padding(18.dp),
@@ -277,21 +516,14 @@ fun SettingsScreen(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = "Prompt Engineering Framework",
+                        text = "Universal Multilingual Prompt Standard",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
                 Text(
-                    text = stringResource(R.string.prompt_structure_info),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 18.sp
-                )
-
-                Text(
-                    text = stringResource(R.string.persian_support_info),
+                    text = "تبدیل و بهینه‌سازی خودکار متن‌های فارسی، انگلیسی یا محاوره‌ای به پرامپت‌های ۵ بخشی استاندارد انگلیسی (ROLE, CONTEXT, TASK, CONSTRAINTS, OUTPUT FORMAT).",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 18.sp
@@ -304,7 +536,7 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.7f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
             Column(
                 modifier = Modifier.padding(18.dp),
@@ -368,7 +600,7 @@ fun SettingsScreen(
             }
         }
 
-        // Mandatory Prototype Security Warning Notice
+        // Security Notice
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -408,7 +640,7 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(48.dp))
     }
 
     if (showClearDialog) {

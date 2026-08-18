@@ -3,7 +3,7 @@
     <item
         android:width="66dp"
         android:height="66dp"
-        android:drawable="@drawable/ic_prompt_logo"
+        android:drawable="@drawable/ic_prompt_studio_1787014102501"
         android:gravity="center" />
 </layer-list>
 

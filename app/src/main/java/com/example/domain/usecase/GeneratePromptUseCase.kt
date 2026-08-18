@@ -1,7 +1,8 @@
 package com.example.domain.usecase
 
 import com.example.data.repository.PromptRepository
-import com.example.domain.model.GeneratedPrompt
+import com.example.domain.model.ApiKeySlot
+import com.example.domain.model.GenerationResult
 import com.example.domain.model.UserPromptInput
 
 class GeneratePromptUseCase(
@@ -9,12 +10,18 @@ class GeneratePromptUseCase(
 ) {
     suspend operator fun invoke(
         input: UserPromptInput,
-        modelOverride: String? = null,
+        slots: List<ApiKeySlot>,
+        autoFallback: Boolean = true,
         temperature: Float = 0.5f
-    ): Result<GeneratedPrompt> {
+    ): Result<GenerationResult> {
         if (input.rawText.isBlank()) {
             return Result.failure(IllegalArgumentException("Prompt input cannot be empty."))
         }
-        return repository.generatePrompt(input, modelOverride, temperature)
+        return repository.generatePromptWithFallback(
+            input = input,
+            slots = slots,
+            autoFallback = autoFallback,
+            temperature = temperature
+        )
     }
 }

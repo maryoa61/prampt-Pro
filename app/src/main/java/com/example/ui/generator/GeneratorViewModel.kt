@@ -4,15 +4,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.datastore.UserPreferencesDataStore
+import com.example.domain.model.ApiKeySlot
 import com.example.domain.model.GeneratedPrompt
+import com.example.domain.model.GenerationResult
 import com.example.domain.model.PromptStyle
 import com.example.domain.model.UserPromptInput
 import com.example.domain.usecase.GeneratePromptUseCase
 import com.example.domain.usecase.SavePromptUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -25,6 +29,7 @@ data class GeneratorUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val generatedPrompt: GeneratedPrompt? = null,
+    val generationResult: GenerationResult? = null,
     val isSaved: Boolean = false
 )
 
@@ -36,6 +41,15 @@ class GeneratorViewModel(
 
     private val _uiState = MutableStateFlow(GeneratorUiState())
     val uiState: StateFlow<GeneratorUiState> = _uiState.asStateFlow()
+
+    val apiSlots: StateFlow<List<ApiKeySlot>> = preferencesDataStore.apiSlotsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val primarySlot: StateFlow<ApiKeySlot?> = preferencesDataStore.primarySlotFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val isAutoFallback: StateFlow<Boolean> = preferencesDataStore.autoFallbackFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     fun updateInput(text: String) {
         _uiState.update { it.copy(rawInput = text, errorMessage = null) }
@@ -68,6 +82,25 @@ class GeneratorViewModel(
         }
     }
 
+    fun clearGeneratedPrompt() {
+        _uiState.update {
+            it.copy(
+                generatedPrompt = null,
+                generationResult = null,
+                isSaved = false,
+                errorMessage = null
+            )
+        }
+    }
+
+    fun resetAll() {
+        _uiState.update {
+            GeneratorUiState(
+                selectedStyle = it.selectedStyle
+            )
+        }
+    }
+
     fun applySample(text: String, style: PromptStyle, role: String = "", constraints: String = "") {
         _uiState.update {
             it.copy(
@@ -90,7 +123,8 @@ class GeneratorViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            val model = preferencesDataStore.selectedModelFlow.first()
+            val slots = preferencesDataStore.apiSlotsFlow.first()
+            val autoFallback = preferencesDataStore.autoFallbackFlow.first()
             val temp = preferencesDataStore.temperatureFlow.first()
 
             val userInput = UserPromptInput(
@@ -102,16 +136,18 @@ class GeneratorViewModel(
 
             val result = generatePromptUseCase(
                 input = userInput,
-                modelOverride = model,
+                slots = slots,
+                autoFallback = autoFallback,
                 temperature = temp
             )
 
             result.fold(
-                onSuccess = { prompt ->
+                onSuccess = { genResult ->
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            generatedPrompt = prompt,
+                            generatedPrompt = genResult.prompt,
+                            generationResult = genResult,
                             isSaved = true,
                             errorMessage = null
                         )
@@ -121,7 +157,7 @@ class GeneratorViewModel(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = error.localizedMessage ?: "Failed to generate prompt. Please verify network and Gemini API key."
+                            errorMessage = error.localizedMessage ?: "Failed to generate prompt. Please check your API keys and connection."
                         )
                     }
                 }

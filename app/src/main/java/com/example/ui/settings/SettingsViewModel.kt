@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.datastore.UserPreferencesDataStore
+import com.example.domain.model.ApiKeySlot
+import com.example.domain.model.ApiProvider
 import com.example.domain.usecase.ClearPromptHistoryUseCase
 import com.example.domain.usecase.ExportPromptHistoryUseCase
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,8 +20,11 @@ class SettingsViewModel(
     private val clearPromptHistoryUseCase: ClearPromptHistoryUseCase
 ) : ViewModel() {
 
-    val selectedModel: StateFlow<String> = preferencesDataStore.selectedModelFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "gemini-2.5-flash")
+    val apiSlots: StateFlow<List<ApiKeySlot>> = preferencesDataStore.apiSlotsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val autoFallback: StateFlow<Boolean> = preferencesDataStore.autoFallbackFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val temperature: StateFlow<Float> = preferencesDataStore.temperatureFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.5f)
@@ -30,9 +35,31 @@ class SettingsViewModel(
     val isDarkTheme: StateFlow<Boolean?> = preferencesDataStore.isDarkThemeFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    fun updateModel(model: String) {
+    fun updateSlot(
+        slotIndex: Int,
+        provider: ApiProvider? = null,
+        apiKey: String? = null,
+        model: String? = null,
+        endpoint: String? = null,
+        label: String? = null,
+        isEnabled: Boolean? = null
+    ) {
         viewModelScope.launch {
-            preferencesDataStore.setModel(model)
+            preferencesDataStore.updateSlot(
+                slotIndex = slotIndex,
+                provider = provider,
+                apiKey = apiKey,
+                model = model,
+                endpoint = endpoint,
+                label = label,
+                isEnabled = isEnabled
+            )
+        }
+    }
+
+    fun setAutoFallback(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesDataStore.setAutoFallback(enabled)
         }
     }
 

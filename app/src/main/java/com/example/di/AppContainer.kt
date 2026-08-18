@@ -65,7 +65,10 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     }
 
     private val aiPromptDataSource: AiPromptDataSource by lazy {
-        AiPromptDataSource(geminiApiService)
+        AiPromptDataSource(
+            apiService = geminiApiService,
+            okHttpClient = okHttpClient
+        )
     }
 
     private val database: AppDatabase by lazy {

@@ -1,9 +1,13 @@
 package com.example.data.repository
 
+import com.example.BuildConfig
 import com.example.data.local.db.PromptDao
 import com.example.data.local.db.PromptEntity
 import com.example.data.remote.AiPromptDataSource
+import com.example.domain.model.ApiKeySlot
+import com.example.domain.model.ApiProvider
 import com.example.domain.model.GeneratedPrompt
+import com.example.domain.model.GenerationResult
 import com.example.domain.model.UserPromptInput
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -11,11 +15,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 interface PromptRepository {
-    suspend fun generatePrompt(
+    suspend fun generatePromptWithFallback(
         input: UserPromptInput,
-        modelOverride: String? = null,
+        slots: List<ApiKeySlot>,
+        autoFallback: Boolean = true,
         temperature: Float = 0.5f
-    ): Result<GeneratedPrompt>
+    ): Result<GenerationResult>
 
     suspend fun savePrompt(prompt: GeneratedPrompt): Long
     fun getAllPrompts(): Flow<List<GeneratedPrompt>>
@@ -30,27 +35,88 @@ class PromptRepositoryImpl(
     private val promptDao: PromptDao
 ) : PromptRepository {
 
-    override suspend fun generatePrompt(
+    override suspend fun generatePromptWithFallback(
         input: UserPromptInput,
-        modelOverride: String?,
+        slots: List<ApiKeySlot>,
+        autoFallback: Boolean,
         temperature: Float
-    ): Result<GeneratedPrompt> {
-        val result = remoteDataSource.generateStructuredPrompt(
-            input = input,
-            modelOverride = modelOverride,
-            temperature = temperature
-        )
-
-        return result.map { structuredPromptText ->
-            val generated = GeneratedPrompt(
-                inputText = input.rawText,
-                promptText = structuredPromptText,
-                style = input.style,
-                timestamp = System.currentTimeMillis()
+    ): Result<GenerationResult> {
+        val activeSlots = slots.filter { it.isEnabled }
+        if (activeSlots.isEmpty()) {
+            return Result.failure(
+                IllegalStateException("No API slot is enabled. Please configure and enable at least one API slot in Settings.")
             )
-            val savedId = promptDao.insertPrompt(PromptEntity.fromDomain(generated))
-            generated.copy(id = savedId)
         }
+
+        val slotsToTry = if (autoFallback) activeSlots else listOf(activeSlots.first())
+        val errors = mutableListOf<String>()
+
+        for ((index, slot) in slotsToTry.withIndex()) {
+            val key = getEffectiveApiKey(slot)
+            
+            // If slot has no key and isn't Gemini with BuildConfig, record and continue if fallback enabled
+            if (key.isBlank() && !(slot.provider == ApiProvider.GEMINI && BuildConfig.GEMINI_API_KEY.isNotBlank() && BuildConfig.GEMINI_API_KEY != "MY_GEMINI_API_KEY")) {
+                val errMsg = "${slot.label} (${slot.provider.displayName}): API key is empty/not configured."
+                errors.add(errMsg)
+                if (!autoFallback) {
+                    return Result.failure(IllegalStateException(errMsg))
+                }
+                continue
+            }
+
+            val result = remoteDataSource.generateStructuredPrompt(
+                input = input,
+                provider = slot.provider,
+                customApiKey = key,
+                customEndpoint = slot.customEndpoint.ifBlank { null },
+                modelOverride = slot.model.ifBlank { null },
+                temperature = temperature
+            )
+
+            if (result.isSuccess) {
+                val structuredPromptText = result.getOrThrow()
+                val generated = GeneratedPrompt(
+                    inputText = input.rawText,
+                    promptText = structuredPromptText,
+                    style = input.style,
+                    timestamp = System.currentTimeMillis()
+                )
+                val savedId = promptDao.insertPrompt(PromptEntity.fromDomain(generated))
+                val finalPrompt = generated.copy(id = savedId)
+
+                return Result.success(
+                    GenerationResult(
+                        prompt = finalPrompt,
+                        usedSlot = slot,
+                        attemptedSlotsCount = index + 1,
+                        fallbackOccurred = index > 0,
+                        fallbackHistory = errors.toList()
+                    )
+                )
+            } else {
+                val errorMsg = result.exceptionOrNull()?.message ?: "Unknown error"
+                errors.add("${slot.label} (${slot.provider.displayName}): $errorMsg")
+                
+                if (!autoFallback) {
+                    return Result.failure(result.exceptionOrNull() ?: Exception(errorMsg))
+                }
+            }
+        }
+
+        // All slots failed or exhausted
+        val combinedErrors = errors.joinToString("\n\n")
+        return Result.failure(
+            Exception("All available API slots failed or exhausted credit/quota:\n$combinedErrors")
+        )
+    }
+
+    private fun getEffectiveApiKey(slot: ApiKeySlot): String {
+        if (slot.apiKey.isNotBlank()) return slot.apiKey.trim()
+        if (slot.provider == ApiProvider.GEMINI) {
+            val buildKey = BuildConfig.GEMINI_API_KEY
+            if (buildKey.isNotBlank() && buildKey != "MY_GEMINI_API_KEY") return buildKey
+        }
+        return ""
     }
 
     override suspend fun savePrompt(prompt: GeneratedPrompt): Long {

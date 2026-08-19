@@ -4,6 +4,7 @@
     <string name="nav_generator">تولید پرامپت</string>
     <string name="nav_history">تاریخچه</string>
     <string name="nav_settings">تنظیمات</string>
+    <string name="nav_templates">قالب‌ها</string>
     <string name="title_generator">ساخت پرامپت هوشمند با هوش مصنوعی</string>
     <string name="subtitle_generator">ورودی با هر زبان (فارسی، انگلیسی و ...) به پرامپت ساختاریافته انگلیسی</string>
     <string name="input_label">متن یا ایده اولیه شما (هر زبانی)</string>
@@ -42,4 +43,23 @@
     <string name="error_api_general">خطا در تولید پرامپت. اتصال اینترنت و کلید API را بررسی کنید.</string>
     <string name="security_warning_title">هشدار امنیتی</string>
     <string name="security_warning_content">I have included your API keys in the generated APK file for this prototype. Please be aware that Android APKs can be easily decompiled, and these keys can be extracted by anyone who has access to the file. Do not share this APK file publicly or with unauthorized individuals to prevent potential misuse.</string>
+    <string name="templates_title">قالب‌های پرامپت</string>
+    <string name="templates_empty">هنوز قالبی نساخته‌ای. اولین قالب خودت را بساز تا ساختارهای پرامپت قابل استفاده دوباره داشته باشی.</string>
+    <string name="template_new">قالب جدید</string>
+    <string name="template_name">نام</string>
+    <string name="template_description">توضیحات (اختیاری)</string>
+    <string name="template_slots">اسلات‌ها</string>
+    <string name="template_slot_name">نام اسلات</string>
+    <string name="template_add">افزودن</string>
+    <string name="template_add_example">افزودن مثال</string>
+    <string name="template_remove">حذف</string>
+    <string name="template_default_values">مقادیر پیش‌فرض</string>
+    <string name="template_key">کلید</string>
+    <string name="template_value">مقدار</string>
+    <string name="template_examples">مثال‌ها</string>
+    <string name="template_example_input">ورودی مثال</string>
+    <string name="template_example_output">خروجی مثال</string>
+    <string name="template_save">ذخیره قالب</string>
+    <string name="template_saving">در حال ذخیره…</string>
+    <string name="template_saved">قالب ذخیره شد</string>
 </resources>

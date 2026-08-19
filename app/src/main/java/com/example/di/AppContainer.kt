@@ -13,6 +13,11 @@ import com.example.domain.usecase.ExportPromptHistoryUseCase
 import com.example.domain.usecase.GeneratePromptUseCase
 import com.example.domain.usecase.GetPromptHistoryUseCase
 import com.example.domain.usecase.SavePromptUseCase
+import com.example.promptpro.data.repo.PromptTemplateRepository
+import com.example.promptpro.domain.usecase.DeleteTemplateUseCase
+import com.example.promptpro.domain.usecase.GetTemplateByIdUseCase
+import com.example.promptpro.domain.usecase.ObserveTemplatesUseCase
+import com.example.promptpro.domain.usecase.SaveTemplateUseCase
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
@@ -30,6 +35,11 @@ interface AppContainer {
     val deletePromptUseCase: DeletePromptUseCase
     val clearPromptHistoryUseCase: ClearPromptHistoryUseCase
     val exportPromptHistoryUseCase: ExportPromptHistoryUseCase
+    val promptTemplateRepository: PromptTemplateRepository
+    val observeTemplatesUseCase: ObserveTemplatesUseCase
+    val getTemplateByIdUseCase: GetTemplateByIdUseCase
+    val saveTemplateUseCase: SaveTemplateUseCase
+    val deleteTemplateUseCase: DeleteTemplateUseCase
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -108,5 +118,25 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override val exportPromptHistoryUseCase: ExportPromptHistoryUseCase by lazy {
         ExportPromptHistoryUseCase(promptRepository)
+    }
+
+    override val promptTemplateRepository: PromptTemplateRepository by lazy {
+        PromptTemplateRepository(database.promptTemplateDao())
+    }
+
+    override val observeTemplatesUseCase: ObserveTemplatesUseCase by lazy {
+        ObserveTemplatesUseCase(promptTemplateRepository)
+    }
+
+    override val getTemplateByIdUseCase: GetTemplateByIdUseCase by lazy {
+        GetTemplateByIdUseCase(promptTemplateRepository)
+    }
+
+    override val saveTemplateUseCase: SaveTemplateUseCase by lazy {
+        SaveTemplateUseCase(promptTemplateRepository)
+    }
+
+    override val deleteTemplateUseCase: DeleteTemplateUseCase by lazy {
+        DeleteTemplateUseCase(promptTemplateRepository)
     }
 }

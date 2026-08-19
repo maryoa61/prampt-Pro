@@ -3,6 +3,7 @@
     <string name="nav_generator">Generator</string>
     <string name="nav_history">History</string>
     <string name="nav_settings">Settings</string>
+    <string name="nav_templates">Templates</string>
     <string name="title_generator">AI Prompt Generator</string>
     <string name="subtitle_generator">Multi-lingual input to structured English prompt</string>
     <string name="input_label">Your Idea / Text (Any Language)</string>
@@ -41,5 +42,24 @@
     <string name="error_api_general">Failed to generate prompt. Please check your network connection and API key.</string>
     <string name="security_warning_title">Security Warning</string>
     <string name="security_warning_content">I have included your API keys in the generated APK file for this prototype. Please be aware that Android APKs can be easily decompiled, and these keys can be extracted by anyone who has access to the file. Do not share this APK file publicly or with unauthorized individuals to prevent potential misuse.</string>
+    <string name="templates_title">Prompt Templates</string>
+    <string name="templates_empty">No templates yet. Create your first template to save reusable prompt structures.</string>
+    <string name="template_new">New Template</string>
+    <string name="template_name">Name</string>
+    <string name="template_description">Description (Optional)</string>
+    <string name="template_slots">Slots</string>
+    <string name="template_slot_name">Slot name</string>
+    <string name="template_add">Add</string>
+    <string name="template_add_example">Add Example</string>
+    <string name="template_remove">Remove</string>
+    <string name="template_default_values">Default Values</string>
+    <string name="template_key">Key</string>
+    <string name="template_value">Value</string>
+    <string name="template_examples">Examples</string>
+    <string name="template_example_input">Example input</string>
+    <string name="template_example_output">Example output</string>
+    <string name="template_save">Save Template</string>
+    <string name="template_saving">Saving…</string>
+    <string name="template_saved">Template saved</string>
 </resources>
 

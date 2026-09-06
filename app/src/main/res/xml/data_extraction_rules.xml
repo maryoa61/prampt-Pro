@@ -5,15 +5,12 @@
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <!-- The DataStore preferences file stores raw AI provider API keys in
+             plain text (Gemini/OpenAI/Claude/DeepSeek/NVIDIA/Groq/custom).
+             It must never leave the device via cloud backup. -->
+        <exclude domain="file" path="datastore/user_preferences.preferences_pb"/>
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <exclude domain="file" path="datastore/user_preferences.preferences_pb"/>
     </device-transfer>
-    -->
 </data-extraction-rules>

@@ -6,8 +6,8 @@
    See https://developer.android.com/about/versions/12/backup-restore
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <!-- Exclude the DataStore preferences file: it stores the user's raw AI
+         provider API keys (Gemini/OpenAI/Claude/etc.) in plain text and must
+         never be included in Auto Backup. -->
+    <exclude domain="file" path="datastore/user_preferences.preferences_pb"/>
 </full-backup-content>

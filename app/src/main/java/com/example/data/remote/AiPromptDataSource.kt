@@ -2,7 +2,6 @@ package com.example.data.remote
 
 import com.example.BuildConfig
 import com.example.domain.model.ApiProvider
-import com.example.domain.model.HeaderAuthType
 import com.example.domain.model.PromptStyle
 import com.example.domain.model.UserPromptInput
 import kotlinx.coroutines.Dispatchers
